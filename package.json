@@ -1,0 +1,23 @@
+{
+  "name": "lockfile-diff",
+  "version": "1.0.0",
+  "description": "Diff two npm lockfiles to see what packages were added, removed, or version-bumped",
+  "main": "src/index.js",
+  "bin": {
+    "lockfile-diff": "bin/cli.js"
+  },
+  "scripts": {
+    "test": "node test/index.test.js"
+  },
+  "keywords": ["lockfile", "diff", "npm", "package-lock", "yarn", "pnpm", "dependencies"],
+  "license": "MIT",
+  "author": "sulthonzh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sulthonzh/lockfile-diff"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "files": ["src/", "bin/", "README.md", "LICENSE"]
+}
