@@ -120,8 +120,9 @@ function parsePnpmLock(content) {
     }
     if (inPackagesSection.length === 0) continue;
 
-    // Match: /pkg-name@version or /@scope/pkg-name@version
-    const match = line.match(/^\s+\/(.+)@([^@]+):$/);
+    // Match: /pkg-name@version, /@scope/pkg-name@version, or /@scope/pkg-name@version(peer@dep):
+    // Peer dep annotations look like: /@babel/core@7.20.0(react@18.2.0):
+    const match = line.match(/^\s+\/(.+?)@([^(@]+)(?:\([^)]*\))?:$/);
     if (match) {
       const name = match[1];
       const version = match[2];
@@ -220,6 +221,7 @@ function diffLockfiles(before, after) {
 function detectFormat(filename, content = '') {
   if (filename.endsWith('package-lock.json')) return 'npm';
   if (filename.endsWith('yarn.lock')) return 'yarn';
+  if (filename.endsWith('yarn berry.lock')) return 'yarn';
   if (filename.endsWith('pnpm-lock.yaml')) return 'pnpm';
 
   // Try content sniffing
@@ -233,6 +235,10 @@ function detectFormat(filename, content = '') {
     } catch { /* not JSON */ }
   }
   if (trimmed.includes('yarn lockfile')) return 'yarn';
+  // Yarn berry format: starts with __metadata or has yarn-specific key patterns
+  if (trimmed.startsWith('__metadata:') || /^__metadata:\s*\n\s*version:\s*/m.test(trimmed)) return 'yarn';
+  // Check for yarn lockfile resolution patterns
+  if (/^[^\s#].*:$/m.test(trimmed) && /\bresolution:\s*"/m.test(trimmed)) return 'yarn';
   if (trimmed.includes('lockfileVersion:') && trimmed.includes('pnpm')) return 'pnpm';
 
   return null;

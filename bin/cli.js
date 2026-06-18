@@ -56,7 +56,11 @@ function parseArgs(argv) {
       case '--summary': opts.summary = true; break;
       case '--show-unchanged': opts.showUnchanged = true; break;
       case '--no-unchanged': opts.showUnchanged = false; break;
-      case '--filter': opts.filters.add(argv[++i]); break;
+      case '--filter': {
+        const val = argv[++i];
+        if (val) opts.filters.add(val);
+        break;
+      }
       case '-h': case '--help': opts.help = true; break;
       case '-v': case '--version': opts.version = true; break;
       default:

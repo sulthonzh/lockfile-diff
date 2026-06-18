@@ -1,13 +1,14 @@
 {
   "name": "lockfile-diff",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Diff two npm lockfiles to see what packages were added, removed, or version-bumped",
   "main": "src/index.js",
   "bin": {
     "lockfile-diff": "bin/cli.js"
   },
   "scripts": {
-    "test": "node test/index.test.js"
+    "test": "node test/index.test.js",
+    "prepublishOnly": "npm test"
   },
   "keywords": ["lockfile", "diff", "npm", "package-lock", "yarn", "pnpm", "dependencies"],
   "license": "MIT",
@@ -19,5 +20,9 @@
   "engines": {
     "node": ">=14"
   },
-  "files": ["src/", "bin/", "README.md", "LICENSE"]
+  "files": ["src/", "bin/", "README.md", "LICENSE", "CHANGELOG.md"],
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  }
 }

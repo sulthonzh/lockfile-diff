@@ -467,6 +467,161 @@ test('integration: npm lockfile full flow', () => {
   assert.strictEqual(diff.removed[0].name, 'express');
 });
 
+// ── pnpm peer dep annotations ─────────────────────────
+
+test('parsePnpmLock: peer dep annotation stripped', () => {
+  const content = `lockfileVersion: '9.0'
+
+packages:
+
+  /@babel/core@7.20.0(react@18.2.0):
+    resolution: {tarball: '...'}
+
+  /lodash@4.17.21:
+    resolution: {tarball: '...'}
+`;
+  const pkgs = parsePnpmLock(content);
+  assert.strictEqual(pkgs.get('@babel/core').version, '7.20.0');
+  assert.strictEqual(pkgs.get('lodash').version, '4.17.21');
+});
+
+test('parsePnpmLock: scoped package with peer deps', () => {
+  const content = `lockfileVersion: '9.0'
+
+packages:
+
+  /@types/react@18.2.0:
+    resolution: {tarball: '...'}
+
+  /@types/react-dom@18.2.0(@types/react@18.2.0):
+    resolution: {tarball: '...'}
+`;
+  const pkgs = parsePnpmLock(content);
+  assert.strictEqual(pkgs.get('@types/react').version, '18.2.0');
+  assert.strictEqual(pkgs.get('@types/react-dom').version, '18.2.0');
+});
+
+// ── classifyVersionChange: edge cases ───────────────────
+
+test('classifyVersionChange: same version is unknown', () => {
+  assert.strictEqual(classifyVersionChange('1.0.0', '1.0.0'), 'unknown');
+});
+
+test('classifyVersionChange: prerelease to stable', () => {
+  assert.strictEqual(classifyVersionChange('1.0.0-beta.1', '1.0.0'), 'prerelease');
+});
+
+test('classifyVersionChange: build metadata stripped', () => {
+  assert.strictEqual(classifyVersionChange('1.0.0+build123', '1.0.1'), 'patch');
+});
+
+// ── diffLockfiles: edge cases ───────────────────────────
+
+test('diffLockfiles: all removed', () => {
+  const before = new Map([
+    ['a', { version: '1.0.0' }],
+    ['b', { version: '2.0.0' }],
+  ]);
+  const after = new Map();
+  const diff = diffLockfiles(before, after);
+  assert.strictEqual(diff.removed.length, 2);
+  assert.strictEqual(diff.added.length, 0);
+});
+
+test('diffLockfiles: all added', () => {
+  const before = new Map();
+  const after = new Map([
+    ['a', { version: '1.0.0' }],
+    ['b', { version: '2.0.0' }],
+  ]);
+  const diff = diffLockfiles(before, after);
+  assert.strictEqual(diff.added.length, 2);
+  assert.strictEqual(diff.removed.length, 0);
+});
+
+// ── computeStats: changeTypes edge ──────────────────────
+
+test('computeStats: all prerelease changes', () => {
+  const diff = {
+    added: [],
+    removed: [],
+    changed: [{ name: 'a', before: '1.0.0', after: '1.0.0-beta.2' }],
+    unchanged: [],
+  };
+  const stats = computeStats(diff);
+  assert.strictEqual(stats.changeTypes.prerelease, 1);
+});
+
+// ── detectFormat: edge cases ────────────────────────────
+
+test('detectFormat: npm by packages field in content', () => {
+  const content = JSON.stringify({ packages: { 'node_modules/foo': { version: '1.0.0' } } });
+  assert.strictEqual(detectFormat('unknown.txt', content), 'npm');
+});
+
+test('detectFormat: npm by dependencies field in content', () => {
+  const content = JSON.stringify({ dependencies: { foo: { version: '1.0.0' } } });
+  assert.strictEqual(detectFormat('unknown.txt', content), 'npm');
+});
+
+test('detectFormat: empty content returns null', () => {
+  assert.strictEqual(detectFormat('file.txt', ''), null);
+});
+
+// ── parseYarnLock: edge cases ───────────────────────────
+
+test('parseYarnLock: empty content', () => {
+  const pkgs = parseYarnLock('');
+  assert.strictEqual(pkgs.size, 0);
+});
+
+test('parseYarnLock: comments only', () => {
+  const pkgs = parseYarnLock('# This is a comment\n# Another comment\n');
+  assert.strictEqual(pkgs.size, 0);
+});
+
+test('parseYarnLock: entry with no version skipped', () => {
+  const content = `lodash@^4.17.0:
+  resolved "..."
+
+express@^4.18.0:
+  version "4.18.2"
+`;
+  const pkgs = parseYarnLock(content);
+  assert.strictEqual(pkgs.size, 1);
+  assert.strictEqual(pkgs.get('express').version, '4.18.2');
+});
+
+// ── parsePackageLock: edge cases ────────────────────────
+
+test('parsePackageLock: v1 deeply nested', () => {
+  const lock = JSON.stringify({
+    lockfileVersion: 1,
+    dependencies: {
+      a: {
+        version: '1.0.0',
+        dependencies: {
+          b: {
+            version: '2.0.0',
+            dependencies: {
+              c: { version: '3.0.0' },
+            },
+          },
+        },
+      },
+    },
+  });
+  const pkgs = parsePackageLock(lock);
+  assert.strictEqual(pkgs.size, 3);
+  assert.strictEqual(pkgs.get('c').version, '3.0.0');
+});
+
+test('parsePackageLock: empty packages object', () => {
+  const lock = JSON.stringify({ lockfileVersion: 3, packages: {} });
+  const pkgs = parsePackageLock(lock);
+  assert.strictEqual(pkgs.size, 0);
+});
+
 // ────────────────────────────────────────────────────────
 
 console.log(`\n\n${passed} passed, ${failed} failed`);
