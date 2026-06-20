@@ -10,7 +10,15 @@
     "test": "node test/index.test.js",
     "prepublishOnly": "npm test"
   },
-  "keywords": ["lockfile", "diff", "npm", "package-lock", "yarn", "pnpm", "dependencies"],
+  "keywords": [
+    "lockfile",
+    "diff",
+    "npm",
+    "package-lock",
+    "yarn",
+    "pnpm",
+    "dependencies"
+  ],
   "license": "MIT",
   "author": "sulthonzh",
   "repository": {
@@ -18,11 +26,21 @@
     "url": "https://github.com/sulthonzh/lockfile-diff"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
-  "files": ["src/", "bin/", "README.md", "LICENSE", "CHANGELOG.md"],
+  "files": [
+    "src/",
+    "bin/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json"
+  },
+  "homepage": "https://github.com/sulthonzh/lockfile-diff",
+  "bugs": {
+    "url": "https://github.com/sulthonzh/lockfile-diff/issues"
   }
 }
