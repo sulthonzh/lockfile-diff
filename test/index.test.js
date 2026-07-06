@@ -622,6 +622,66 @@ test('parsePackageLock: empty packages object', () => {
   assert.strictEqual(pkgs.size, 0);
 });
 
+// ── parseYarnLock: branch coverage edge cases ─────────
+
+test('parseYarnLock: tab-indented version line', () => {
+  const content = 'lodash@^4.17.0:\n\tversion "4.17.21"\n';
+  const pkgs = parseYarnLock(content);
+  assert.strictEqual(pkgs.get('lodash').version, '4.17.21');
+});
+
+test('parseYarnLock: empty line before version breaks lookahead', () => {
+  const content = 'lodash@^4.17.0:\n\n  version "4.17.21"\n';
+  const pkgs = parseYarnLock(content);
+  assert.strictEqual(pkgs.has('lodash'), false);
+});
+
+test('parseYarnLock: yarn berry __metadata header', () => {
+  const content = '__metadata:\n  version: 8\n\nlodash@^4.17.0:\n  version "4.17.21"\n  resolution: "lodash@npm:4.17.21"\n';
+  const pkgs = parseYarnLock(content);
+  assert.strictEqual(pkgs.get('lodash').version, '4.17.21');
+});
+
+test('parseYarnLock: key with trailing spaces before colon', () => {
+  const content = 'lodash@^4.17.0   :\n  version "4.17.21"\n';
+  const pkgs = parseYarnLock(content);
+  assert.strictEqual(pkgs.get('lodash').version, '4.17.21');
+});
+
+// ── extractYarnPkgName: edge cases ─────────────────────
+
+test('extractYarnPkgName: bare @ entry returns as-is', () => {
+  // Entry that starts with @ but has no second @ (malformed) — defensive fallback
+  assert.strictEqual(extractYarnPkgName('@'), '@');
+});
+
+// ── detectFormat: yarn berry content sniffing ──────────
+
+test('detectFormat: yarn berry by __metadata header', () => {
+  const content = '__metadata:\n  version: 8\n';
+  assert.strictEqual(detectFormat('unknown.txt', content), 'yarn');
+});
+
+test('detectFormat: yarn berry by resolution pattern', () => {
+  const content = 'lodash@^4.17.0:\n  resolution: "lodash@npm:4.17.21"\n';
+  assert.strictEqual(detectFormat('unknown.txt', content), 'yarn');
+});
+
+// ── parsePackageLock: v1 with dependencies has version ──
+
+test('parsePackageLock: v1 entry without version skipped', () => {
+  const lock = JSON.stringify({
+    lockfileVersion: 1,
+    dependencies: {
+      badpkg: { /* no version */ },
+      goodpkg: { version: '1.0.0' },
+    },
+  });
+  const pkgs = parsePackageLock(lock);
+  assert.strictEqual(pkgs.size, 1);
+  assert.strictEqual(pkgs.get('goodpkg').version, '1.0.0');
+});
+
 // ────────────────────────────────────────────────────────
 
 console.log(`\n\n${passed} passed, ${failed} failed`);
