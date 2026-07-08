@@ -42,5 +42,8 @@
   "homepage": "https://github.com/sulthonzh/lockfile-diff",
   "bugs": {
     "url": "https://github.com/sulthonzh/lockfile-diff/issues"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0"
   }
 }
